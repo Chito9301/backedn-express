@@ -101,8 +101,8 @@ app.use("/api/public", cacheMiddleware(300))
 // STATIC FILE SERVING
 // =============================================================================
 
-// Serve dashboard static files from /dashboard route
-app.use("/dashboard", express.static(path.join(__dirname, "../dashboard")))
+// Serve dashboard static files from /static route
+app.use("/static", express.static(path.join(__dirname, "../dashboard")))
 
 // =============================================================================
 // API ROUTES CONFIGURATION
@@ -139,12 +139,10 @@ app.get("/health", (req, res) => {
 // MAIN DASHBOARD ROUTE (ROOT)
 // =============================================================================
 
-// Redirect root to dashboard
 app.get("/", (req, res) => {
-  res.redirect("/dashboard")
+  res.sendFile(path.join(__dirname, "../dashboard/index.html"))
 })
 
-// Serve dashboard HTML file
 app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "../dashboard/index.html"))
 })
