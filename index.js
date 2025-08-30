@@ -1,10 +1,3 @@
-<<<<<<< HEAD
-// c3cf65c (Corrige conflictos y formatea backend con Prettier)
-// Backend completo
-//
-
-=======
->>>>>>> 6ff354b (index corregido de Prettier)
 // Carga variables de entorno
 import "dotenv/config"
 import express from "express"
@@ -13,6 +6,7 @@ import multer from "multer"
 import cloudinary from "cloudinary"
 import cors from "cors"
 import jwt from "jsonwebtoken"
+import bcrypt from "bcryptjs" // Added missing bcrypt import
 import path from "path"
 
 // Modelos
@@ -22,14 +16,11 @@ import Media from "./models/Media.js"
 // =======================
 // Configuración CORS
 // =======================
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://mi-app-frontend-six.vercel.app", // 👈 ajusta si usas otra URL
-]
+const allowedOrigins = ["http://localhost:3000", "https://mi-app-frontend-six.vercel.app"]
 
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) return callback(null, true) // permitir Postman, curl, etc.
+    if (!origin) return callback(null, true)
     if (allowedOrigins.includes(origin)) {
       callback(null, true)
     } else {
@@ -53,11 +44,9 @@ app.use(express.urlencoded({ extended: true }))
 // =======================
 // Servir dashboard estático
 // =======================
-const dashboardDir = path.join(process.cwd(), "dashboard") // usar process.cwd() para compatibilidad ESM
-app.use("/dashboard-assets", express.static(dashboardDir)) // assets si quieres ofrecer rutas directas
+const dashboardDir = path.join(process.cwd(), "dashboard")
+app.use("/dashboard-assets", express.static(dashboardDir))
 
-// Si quieres servirlo en la raíz URL '/', descomenta la ruta '/' de abajo que devuelve el index.html.
-// Mantengo la ruta /dashboard para que no rompa API existentes.
 app.get("/dashboard", (req, res) => {
   return res.sendFile(path.join(dashboardDir, "index.html"), (err) => {
     if (err) {
@@ -67,20 +56,17 @@ app.get("/dashboard", (req, res) => {
   })
 })
 
-// Si prefieres que el dashboard se sirva en la raíz '/', puedes usar esta ruta (descomenta):
-/*
-app.get('/', (req, res) => {
-  return res.sendFile(path.join(dashboardDir, 'index.html'), (err) => {
+app.get("/", (req, res) => {
+  return res.sendFile(path.join(dashboardDir, "index.html"), (err) => {
     if (err) {
-      console.error('Error sirviendo dashboard en /:', err);
-      res.status(500).send('Error cargando dashboard');
+      console.error("Error sirviendo dashboard en /:", err)
+      res.status(500).send("Error cargando dashboard")
     }
-  });
-});
-*/
+  })
+})
 
 // =======================
-// Middleware autenticación JWT (no tocar)
+// Middleware autenticación JWT
 // =======================
 function authMiddleware(req, res, next) {
   const authHeader = req.headers["authorization"]
@@ -95,8 +81,7 @@ function authMiddleware(req, res, next) {
 }
 
 // =======================
-// Dashboard / test server (API) - si quieres mantener el antiguo endpoint JSON para checks
-// NO se elimina — es la comprobación API, distinta de la UI estática
+// Dashboard API status
 // =======================
 app.get("/api/status", async (req, res) => {
   try {
@@ -135,30 +120,23 @@ cloudinary.v2.config({
 })
 
 // =======================
-// Configurar multer (no tocar)
+// Configurar multer
 // =======================
 const storage = multer.memoryStorage()
 const upload = multer({ storage })
 
 // =======================
-<<<<<<< HEAD
-\
-// Rutas Auth (register + login)
-// c3cf65c (Corrige conflictos y formatea backend con Prettier)
-=======
-// Rutas Auth (sin cambios)
+// Rutas Auth
 // =======================
 
 // Registro
->>>>>>> 6ff354b (index corregido de Prettier)
-app.post('/api/auth/register', async (req, res) =>
-{
+app.post("/api/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body
-    if (!username || !email || !password) return res.status(400).json({ error: 'Todos los campos son requeridos' });
+    if (!username || !email || !password) return res.status(400).json({ error: "Todos los campos son requeridos" })
 
     const userExists = await User.findOne({ $or: [{ username }, { email }] })
-    if (userExists) return res.status(400).json({ error: 'Usuario o email ya existe' });
+    if (userExists) return res.status(400).json({ error: "Usuario o email ya existe" })
 
     const hashedPassword = await bcrypt.hash(password, 10)
     const user = new User({ username, email, password: hashedPassword })
@@ -168,49 +146,40 @@ app.post('/api/auth/register', async (req, res) =>
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-}
-)
-
-// Login
-app.post(\'/api/auth/login\', async (req, res) => {
-try {
-  \
-  const { email, password } = req.body
-  if (!email || !password) return res.status(400).json({ error: 'Todos los campos son requeridos' });
-
-  const user = await User.findOne({ email })
-  if (!user) return res.status(400).json({ error: 'Usuario no encontrado' });
-
-  const valid = await bcrypt.compare(password, user.password)
-  if (!valid) return res.status(400).json({ error: 'Contraseña incorrecta' });
-
-  const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: "7d" })
-  res.json({
-    token,
-    user: { id: user._id, username: user.username, email: user.email },
-  })
-} catch (err) {
-  res.status(500).json({ error: err.message })
-}
 })
 
-\
+// Login
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body
+    if (!email || !password) return res.status(400).json({ error: "Todos los campos son requeridos" })
+
+    const user = await User.findOne({ email })
+    if (!user) return res.status(400).json({ error: "Usuario no encontrado" })
+
+    const valid = await bcrypt.compare(password, user.password)
+    if (!valid) return res.status(400).json({ error: "Contraseña incorrecta" })
+
+    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: "7d" })
+    res.json({
+      token,
+      user: { id: user._id, username: user.username, email: user.email },
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // =======================
-<<<<<<< HEAD
-// Rutas Media (upload, trending, getById)
-// c3cf65c (Corrige conflictos y formatea backend con Prettier)
-=======
-// Rutas Media (sin cambios)
+// Rutas Media
 // =======================
 
 // Subir media
->>>>>>> 6ff354b (index corregido de Prettier)
-app.post('/api/media', authMiddleware, upload.single('file'), async (req, res) =>
-{
+app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     const { title, description, hashtags, type } = req.body
     const file = req.file
-    if (!file) return res.status(400).json({ error: 'No file uploaded' });
+    if (!file) return res.status(400).json({ error: "No file uploaded" })
 
     const username = req.user.username
 
@@ -221,19 +190,11 @@ app.post('/api/media', authMiddleware, upload.single('file'), async (req, res) =
         context: { title, description, hashtags },
       },
       async (error, result) => {
-        <<<<<<< HEAD
-\
         if (error) {
           console.error("Cloudinary upload error:", error)
           return res.status(500).json({ error: error.message })
         }
-        //c3cf65c (Corrige conflictos y formatea backend con Prettier)
-        =======
-\
-        if (error) return res.status(500).json({ error: error.message })
 
-        \
->>>>>>> 6ff354b (index corregido de Prettier)
         const media = new Media({
           title,
           description,
@@ -258,13 +219,10 @@ app.post('/api/media', authMiddleware, upload.single('file'), async (req, res) =
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-}
-)
+})
 
-\
 // Listar media trending
-app.get('/api/media/trending', async (req, res) =>
-{
+app.get("/api/media/trending", async (req, res) => {
   try {
     const { orderBy = "views", limit = 10 } = req.query
     const media = await Media.find()
@@ -274,16 +232,13 @@ app.get('/api/media/trending', async (req, res) =>
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-}
-)
+})
 
-\
 // Obtener media por id
-app.get('/api/media/:id', async (req, res) =>
-{
+app.get("/api/media/:id", async (req, res) => {
   try {
     const media = await Media.findById(req.params.id)
-    if (!media) return res.status(404).json({ error: 'Media no encontrada' });
+    if (!media) return res.status(404).json({ error: "Media no encontrada" })
 
     media.views += 1
     await media.save()
@@ -292,42 +247,29 @@ app.get('/api/media/:id', async (req, res) =>
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-}
-)
+})
 
-\
 // =======================
-<<<<<<< HEAD
 // Rutas User
-// c3cf65c (Corrige conflictos y formatea backend con Prettier)
-=======
-// Rutas User (sin cambios)
 // =======================
 
 // Perfil del usuario autenticado
->>>>>>> 6ff354b (index corregido de Prettier)
-app.get('/api/users/profile', authMiddleware, async (req, res) =>
-{
+app.get("/api/users/profile", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password")
     res.json(user)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
-}
-)
+})
 
-\
 // =======================
 // Manejo de rutas inválidas
 // =======================
-app.use((req, res) =>
-{
+app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" })
-}
-)
+})
 
-\
 // =======================
 // Iniciar servidor
 // =======================

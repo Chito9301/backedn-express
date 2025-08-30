@@ -1,253 +1,362 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Backend Management</title>
-     Added Tailwind CSS for styling and Chart.js for data visualization 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Custom styles for better dashboard appearance */
-        .stat-card {
-            transition: transform 0.2s ease-in-out;
-        }
-        .stat-card:hover {
-            transform: translateY(-2px);
-        }
-    </style>
-</head>
-<body class="bg-gray-100">
-    <div id="app" class="min-h-screen">
-         =================================================================== 
-         NAVIGATION BAR 
-         =================================================================== 
-         Enhanced navigation with better styling and user info display 
-        <nav class="bg-white shadow-sm border-b">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                     Dashboard Title 
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-indigo-600 rounded-md flex items-center justify-center">
-                                <span class="text-white text-sm font-bold">A</span>
-                            </div>
-                        </div>
-                        <h1 class="ml-3 text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-                    </div>
-                    
-                     User Actions 
-                    <div class="flex items-center space-x-4">
-                        <span id="userInfo" class="text-sm text-gray-700 font-medium"></span>
-                        <button id="logoutBtn" class="bg-red-500 text-white px-4 py-2 rounded-md text-sm hover:bg-red-600 transition-colors duration-200">
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </div>
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard • Retos Diarios</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+       Sidebar 
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="logo">R</div>
+          <div>
+            <span>Retos Diarios</span><br />
+            <small style="color: var(--muted)">Panel de Control</small>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <h4>Navegación</h4>
+          <a href="#" class="active">📊 Dashboard</a>
+          <a href="#"
+            >👥 Usuarios <span class="badge" id="badgeUsers">0</span></a
+          >
+          <a href="#">🏆 Retos</a>
+          <a href="#">⚙️ Configuración</a>
         </nav>
+      </aside>
 
-         =================================================================== 
-         LOGIN FORM (Initially Visible) 
-         =================================================================== 
-         Enhanced login form with better UX and error handling 
-        <div id="loginForm" class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div class="max-w-md w-full space-y-8">
-                 Login Header 
-                <div class="text-center">
-                    <div class="mx-auto h-12 w-12 bg-indigo-600 rounded-full flex items-center justify-center">
-                        <span class="text-white text-xl font-bold">A</span>
-                    </div>
-                    <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Admin Login
-                    </h2>
-                    <p class="mt-2 text-center text-sm text-gray-600">
-                        Sign in to access the dashboard
-                    </p>
-                </div>
-                
-                 Login Form 
-                <form class="mt-8 space-y-6" id="loginFormElement">
-                    <div class="space-y-4">
-                         Email Input 
-                        <div>
-                            <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
-                            <input id="email" name="email" type="email" required 
-                                   class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="Enter your email">
-                        </div>
-                        
-                         Password Input 
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                            <input id="password" name="password" type="password" required
-                                   class="mt-1 appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="Enter your password">
-                        </div>
-                    </div>
-                    
-                     Submit Button 
-                    <div>
-                        <button type="submit" id="loginBtn"
-                                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors duration-200">
-                            <span id="loginBtnText">Sign in</span>
-                            <span id="loginSpinner" class="hidden ml-2">
-                                <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            </span>
-                        </button>
-                    </div>
-                </form>
-                
-                 Error Message Display 
-                <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center">
-                     Error message will be displayed here 
-                </div>
-            </div>
+       Topbar 
+      <header class="topbar">
+        <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+        <div class="search">
+          🔎
+          <input placeholder="Buscar usuarios, retos, promociones..." id="q" />
         </div>
-
-         =================================================================== 
-         DASHBOARD CONTENT (Initially Hidden) 
-         =================================================================== 
-         Enhanced dashboard with better organization and visual hierarchy 
-        <div id="dashboardContent" class="hidden">
-            <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                
-                 =================================================================== 
-                 STATISTICS CARDS SECTION 
-                 =================================================================== 
-                <div class="mb-8">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Dashboard Overview</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        
-                         Total Users Card 
-                        <div class="bg-white overflow-hidden shadow rounded-lg stat-card">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-indigo-500 rounded-md flex items-center justify-center">
-                                            <span class="text-white text-sm font-medium">👥</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                                            <dd id="totalUsers" class="text-2xl font-bold text-gray-900">-</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                         Total Media Card 
-                        <div class="bg-white overflow-hidden shadow rounded-lg stat-card">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                                            <span class="text-white text-sm font-medium">📁</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Media</dt>
-                                            <dd id="totalMedia" class="text-2xl font-bold text-gray-900">-</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                         Active Users Card 
-                        <div class="bg-white overflow-hidden shadow rounded-lg stat-card">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-yellow-500 rounded-md flex items-center justify-center">
-                                            <span class="text-white text-sm font-medium">⚡</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">Active Users (30d)</dt>
-                                            <dd id="activeUsers" class="text-2xl font-bold text-gray-900">-</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                         Recent Uploads Card 
-                        <div class="bg-white overflow-hidden shadow rounded-lg stat-card">
-                            <div class="p-5">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0">
-                                        <div class="w-8 h-8 bg-red-500 rounded-md flex items-center justify-center">
-                                            <span class="text-white text-sm font-medium">📤</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-5 w-0 flex-1">
-                                        <dl>
-                                            <dt class="text-sm font-medium text-gray-500 truncate">Recent Uploads (24h)</dt>
-                                            <dd id="recentUploads" class="text-2xl font-bold text-gray-900">-</dd>
-                                        </dl>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                 =================================================================== 
-                 DETAILED INFORMATION SECTION 
-                 =================================================================== 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    
-                     Recent Activity Panel 
-                    <div class="bg-white shadow rounded-lg">
-                        <div class="px-4 py-5 sm:p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">Recent Activity</h3>
-                                <button id="refreshActivity" class="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-                                    Refresh
-                                </button>
-                            </div>
-                            <div id="recentActivity" class="space-y-3">
-                                 Loading state 
-                                <div class="animate-pulse">
-                                    <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                    <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                     System Health Panel 
-                    <div class="bg-white shadow rounded-lg">
-                        <div class="px-4 py-5 sm:p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg leading-6 font-medium text-gray-900">System Health</h3>
-                                <button id="refreshHealth" class="text-indigo-600 hover:text-indigo-500 text-sm font-medium">
-                                    Refresh
-                                </button>
-                            </div>
-                            <div id="systemHealth" class="space-y-3">
-                                 Loading state 
-                                <div class="animate-pulse">
-                                    <div class="h-4 bg-gray-200 rounded w-2/3 mb-2"></div>
-                                    <div class="h-4 bg-gray-200 rounded w-1/3"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="actions">
+          <button class="icon-btn" title="Notificaciones">🔔</button>
+          <button class="icon-btn" title="Atajos">⚡</button>
+          <div class="icon-btn" title="Admin">👤 Admin</div>
         </div>
+      </header>
+
+       Main 
+      <main class="main">
+         KPIs 
+        <section class="kpis">
+          <article class="card">
+            <div class="label">Usuarios activos ahora</div>
+            <div class="value" id="kpiActive">0</div>
+            <div class="delta up" id="kpiActiveDelta">+0.0% vs 1h</div>
+          </article>
+
+          <article class="card">
+            <div class="label">Viendo promociones</div>
+            <div class="value" id="kpiPromo">0</div>
+            <div class="delta" id="kpiPromoDelta">+0.0% vs 1h</div>
+          </article>
+
+          <article class="card">
+            <div class="label">Premium activos</div>
+            <div class="value" id="kpiPremium">0</div>
+            <div class="delta up" id="kpiPremiumDelta">+0.0% vs 1h</div>
+          </article>
+
+          <article class="card">
+            <div class="label">Retos ejecutados hoy</div>
+            <div class="value" id="kpiChallenges">0</div>
+            <div class="delta" id="kpiChallengesDelta">+0.0% vs ayer</div>
+          </article>
+        </section>
+
+         Charts & Filters 
+        <section class="grid-2">
+          <article class="card">
+            <div class="panel-title">
+              <h3>Evolución de usuarios (activos / premium / promo)</h3>
+              <div class="filters">
+                <select class="select" id="range">
+                  <option value="1h">Últ. 1h</option>
+                  <option value="24h" selected>Últ. 24h</option>
+                  <option value="7d">Últ. 7 días</option>
+                </select>
+                <button class="btn" id="refresh">Actualizar</button>
+              </div>
+            </div>
+            <div class="chart" id="chart">
+              <span>Gráfico lineal (SVG) — sin dependencias</span>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="panel-title">
+              <h3>Filtros</h3>
+              <div class="filters">
+                <select class="select" id="seg">
+                  <option value="all">Todos</option>
+                  <option value="active">Activos</option>
+                  <option value="promo">Promoción</option>
+                  <option value="premium">Premium</option>
+                </select>
+                <button class="btn primary" id="apply">Aplicar</button>
+              </div>
+            </div>
+            <div>
+              <p style="color: var(--muted); margin-top: 0">
+                Segmenta por estado para acotar la tabla de usuarios.
+              </p>
+              <ul style="margin: 0 0 8px 18px; color: var(--muted)">
+                <li>Activos ahora</li>
+                <li>En promoción actualmente</li>
+                <li>Con suscripción premium</li>
+              </ul>
+            </div>
+          </article>
+        </section>
+
+         Table 
+        <section class="card" style="margin-top: 14px">
+          <div class="panel-title">
+            <h3>Usuarios activos (detalle)</h3>
+            <div class="filters">
+              <input
+                class="select"
+                placeholder="Buscar por nombre..."
+                id="searchName"
+              />
+              <button class="btn" id="clear">Limpiar</button>
+            </div>
+          </div>
+
+          <table class="table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Último reto</th>
+                <th>Premium</th>
+                <th>Viendo promo</th>
+                <th>Última actividad</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </main>
     </div>
 
-     Load dashboard JavaScript for functionality 
-    <script src="dashboard.js"></script>
-</body>
+    <script>
+      // ===== Mock data generator (no modifica tu backend) =====
+      const state = {
+        now: Date.now(),
+        users: [],
+        series: { active: [], premium: [], promo: [] },
+      };
+
+      function rnd(n = 1) {
+        return Math.round(Math.random() * n);
+      }
+      function genUsers(n = 32) {
+        const names = [
+          "Ana",
+          "Luis",
+          "Carla",
+          "Diego",
+          "Marta",
+          "Leo",
+          "Nora",
+          "Iván",
+          "Sofía",
+          "Pablo",
+          "Elena",
+          "Raúl",
+          "Cami",
+          "Gaby",
+          "Noa",
+          "Isis",
+          "Tadeo",
+          "Julia",
+          "Rubén",
+          "Val",
+          "Luz",
+          "Vitor",
+        ];
+        const retos = [
+          "Plancha 60s",
+          "Correr 5km",
+          "Leer 10p",
+          "Hidratación",
+          "Meditación 5m",
+          "Yoga",
+          "Respirar 4-7-8",
+          "Flexiones 20",
+          "Squats 30",
+        ];
+        state.users = Array.from({ length: n }).map((_, i) => {
+          const premium = Math.random() < 0.32;
+          const promo = Math.random() < 0.28;
+          const active = Math.random() < 0.65;
+          return {
+            name: `${names[rnd(names.length - 1)]} ${["A.", "B.", "C.", "D.", "E."][rnd(4)]}`,
+            premium,
+            promo,
+            active,
+            lastChallenge: retos[rnd(retos.length - 1)],
+            lastSeen: new Date(
+              Date.now() - rnd(3600) * 1000,
+            ).toLocaleTimeString(),
+          };
+        });
+      }
+      function genSeries(points = 48) {
+        const push = (arr, v) => arr.push(v < 0 ? 0 : v);
+        state.series.active = [];
+        state.series.premium = [];
+        state.series.promo = [];
+        let a = 40 + rnd(20),
+          p = 12 + rnd(8),
+          pr = 10 + rnd(10);
+        for (let i = 0; i < points; i++) {
+          a += (Math.random() - 0.5) * 8;
+          p += (Math.random() - 0.5) * 3;
+          pr += (Math.random() - 0.5) * 4;
+          push(state.series.active, Math.round(a));
+          push(state.series.premium, Math.round(p));
+          push(state.series.promo, Math.round(pr));
+        }
+      }
+
+      function kpis() {
+        const active = state.users.filter((u) => u.active).length;
+        const promo = state.users.filter((u) => u.promo).length;
+        const premium = state.users.filter((u) => u.premium).length;
+        document.getElementById("kpiActive").textContent = active;
+        document.getElementById("kpiPromo").textContent = promo;
+        document.getElementById("kpiPremium").textContent = premium;
+        document.getElementById("kpiChallenges").textContent = Math.round(
+          active * 1.2 + rnd(20),
+        );
+        document.getElementById("badgeUsers").textContent = state.users.length;
+      }
+
+      function drawChart() {
+        const el = document.getElementById("chart");
+        const w = el.clientWidth - 20,
+          h = el.clientHeight - 20,
+          pad = 16;
+        const maxY =
+          Math.max(
+            ...state.series.active,
+            ...state.series.premium,
+            ...state.series.promo,
+          ) * 1.2;
+        const toXY = (v, i, len) => [
+          pad + i * ((w - 2 * pad) / (len - 1)),
+          h - pad - (v / maxY) * (h - 2 * pad),
+        ];
+        const path = (arr) => {
+          return arr
+            .map(
+              (v, i) =>
+                (i ? "L" : "M") +
+                toXY(v, i, arr.length)
+                  .map((n) => n.toFixed(1))
+                  .join(","),
+            )
+            .join(" ");
+        };
+        const svg = `
+        <svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+          <defs>
+            <linearGradient id="g1" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="var(--brand)" stop-opacity=".8"/>
+              <stop offset="100%" stop-color="var(--brand)" stop-opacity=".1"/>
+            </linearGradient>
+            <linearGradient id="g2" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="var(--brand-2)" stop-opacity=".8"/>
+              <stop offset="100%" stop-color="var(--brand-2)" stop-opacity=".1"/>
+            </linearGradient>
+            <linearGradient id="g3" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="var(--accent)" stop-opacity=".8"/>
+              <stop offset="100%" stop-color="var(--accent)" stop-opacity=".1"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke-width="2.2">
+            <path d="${path(state.series.active)}" stroke="var(--brand)"/>
+            <path d="${path(state.series.premium)}" stroke="var(--brand-2)"/>
+            <path d="${path(state.series.promo)}" stroke="var(--accent)"/>
+          </g>
+        </svg>`;
+        el.innerHTML = svg;
+      }
+
+      function renderTable() {
+        const seg = document.getElementById("seg").value;
+        const q = (
+          document.getElementById("searchName").value || ""
+        ).toLowerCase();
+        const tbody = document.querySelector("#usersTable tbody");
+        tbody.innerHTML = "";
+        state.users
+          .filter(
+            (u) =>
+              seg === "all" ||
+              (seg === "active" && u.active) ||
+              (seg === "promo" && u.promo) ||
+              (seg === "premium" && u.premium),
+          )
+          .filter((u) => u.name.toLowerCase().includes(q))
+          .slice(0, 50)
+          .forEach((u) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>${u.name}</td>
+            <td><span class="status ${u.active ? "active" : ""}">${u.active ? "Activo" : "Inactivo"}</span></td>
+            <td>${u.lastChallenge}</td>
+            <td>${u.premium ? "Sí" : "No"}</td>
+            <td>${u.promo ? "Sí" : "No"}</td>
+            <td>${u.lastSeen}</td>`;
+            tbody.appendChild(tr);
+          });
+      }
+
+      function tick() {
+        // simulate small changes
+        if (Math.random() < 0.5) {
+          const i = Math.floor(Math.random() * state.users.length);
+          state.users[i].active = !state.users[i].active;
+        }
+        kpis();
+        renderTable();
+      }
+
+      // Events
+      document.getElementById("refresh").onclick = () => {
+        genSeries();
+        drawChart();
+      };
+      document.getElementById("apply").onclick = renderTable;
+      document.getElementById("searchName").oninput = renderTable;
+      document.getElementById("clear").onclick = () => {
+        document.getElementById("searchName").value = "";
+        renderTable();
+      };
+
+      function toggleSidebar() {
+        document.getElementById("sidebar").classList.toggle("open");
+      }
+
+      // Init
+      genUsers(42);
+      genSeries();
+      kpis();
+      drawChart();
+      renderTable();
+      setInterval(tick, 2000);
+      window.addEventListener("resize", drawChart);
+    </script>
+  </body>
 </html>
