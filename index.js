@@ -1,15 +1,19 @@
+// =======================
 // Carga variables de entorno
+// =======================
 import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary"; // ✅ corrección
+import { v2 as cloudinary } from "cloudinary";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import path from "path";
 
+// =======================
 // Modelos
+// =======================
 import User from "./models/User.js";
 import Media from "./models/Media.js";
 
@@ -48,9 +52,9 @@ app.use(express.urlencoded({ extended: true }));
 // Servir dashboard estático
 // =======================
 const publicDir = path.join(process.cwd(), "public");
-app.use("/public-assets", express.static(publicDir));
+app.use(express.static(publicDir));
 
-app.get(["/", "/public"], (req, res) => {
+app.get("/", (req, res) => {
   return res.sendFile(path.join(publicDir, "index.html"), (err) => {
     if (err) {
       console.error("Error sirviendo dashboard:", err);
@@ -177,8 +181,6 @@ app.post("/api/auth/login", async (req, res) => {
 // =======================
 // Rutas Media
 // =======================
-
-// Subir media
 app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     const { title, description, hashtags, type } = req.body;
@@ -256,8 +258,6 @@ app.get("/api/media/:id", async (req, res) => {
 // =======================
 // Rutas User
 // =======================
-
-// Perfil del usuario autenticado
 app.get("/api/users/profile", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
