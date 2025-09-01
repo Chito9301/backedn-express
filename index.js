@@ -47,11 +47,11 @@ app.use(express.urlencoded({ extended: true }));
 // =======================
 // Servir dashboard estático
 // =======================
-const dashboardDir = path.join(process.cwd(), "dashboard");
-app.use("/dashboard-assets", express.static(dashboardDir));
+const publicDir = path.join(process.cwd(), "public");
+app.use("/public-assets", express.static(publicDir));
 
-app.get(["/", "/dashboard"], (req, res) => {
-  return res.sendFile(path.join(dashboardDir, "index.html"), (err) => {
+app.get(["/", "/public"], (req, res) => {
+  return res.sendFile(path.join(publicDir, "index.html"), (err) => {
     if (err) {
       console.error("Error sirviendo dashboard:", err);
       res.status(500).send("Error cargando dashboard");
