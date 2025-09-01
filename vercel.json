@@ -2,17 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "src/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "dashboard/**"
-      }
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "src/index.ts"
+      "dest": "/$1"
     }
   ]
 }
