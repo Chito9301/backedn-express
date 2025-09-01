@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
   },
 })
 
-// Middleware para actualizar updatedAt antes de guardar
+// Middleware para actualizar `updatedAt`
 userSchema.pre("save", function (next) {
   this.updatedAt = Date.now()
   next()

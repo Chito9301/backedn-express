@@ -59,7 +59,7 @@ const mediaSchema = new mongoose.Schema({
   },
 })
 
-// Índices para mejorar el rendimiento
+// Índices para rendimiento
 mediaSchema.index({ createdBy: 1 })
 mediaSchema.index({ views: -1 })
 mediaSchema.index({ likes: -1 })
