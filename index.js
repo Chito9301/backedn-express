@@ -278,4 +278,8 @@ app.use((req, res) => {
 // Iniciar servidor
 // =======================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`✅ Backend corriendo en puerto ${PORT}`));
+app.listen(PORT, () =>
+  console.log(`✅ Backend corriendo en puerto ${PORT}`)
+);
+
+export default app;
