@@ -1,38 +1,42 @@
-// backend/routes/mediaRoutes.js
-const express = require("express");
-const router = express.Router();
-const multer = require("multer");
-const cloudinary = require("cloudinary").v2;
-const Media = require("../models/Media");
-const { authMiddleware } = require("../middlewares/authMiddleware"); // crea este middleware aparte o ajusta
+// routes/media.routes.js
+import { Router } from "express"
+import multer from "multer"
+import { v2 as cloudinary } from "cloudinary"
+import Media from "../models/Media.js"
+import { authMiddleware } from "./auth.routes.js"
 
-// Configurar multer
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const router = Router()
 
-// Subir nuevo media
+// Multer en memoria (Vercel Serverless friendly)
+const storage = multer.memoryStorage()
+const upload = multer({ storage })
+
+// === POST /api/media === (subir archivo)
 router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
   try {
-    const { title, description, hashtags, type } = req.body;
-    const file = req.file;
+    const file = req.file
+    const { title, description, hashtags, type } = req.body || {}
+    if (!file) return res.status(400).json({ error: "No file uploaded" })
+    if (!type) return res.status(400).json({ error: "type es requerido (image|video|audio|document)" })
 
-    if (!file) return res.status(400).json({ error: "No file uploaded" });
+    const username = req.user?.username || "anonymous"
 
-    const username = req.user.username;
-
-    const uploadStream = cloudinary.uploader.upload_stream(
+    const stream = cloudinary.uploader.upload_stream(
       {
-        folder: `${username || "anonymous"}/${type || "media"}`,
+        folder: `${username}/${type}`,
         resource_type: "auto",
         context: { title, description, hashtags },
       },
       async (error, result) => {
-        if (error) return res.status(500).json({ error: error.message });
+        if (error) {
+          console.error("Cloudinary upload error:", error)
+          return res.status(500).json({ error: error.message })
+        }
 
-        const media = new Media({
+        const media = await Media.create({
           title,
           description,
-          hashtags: hashtags ? hashtags.split(",").map((h) => h.trim()) : [],
+          hashtags: hashtags ? String(hashtags).split(",").map((h) => h.trim()).filter(Boolean) : [],
           type,
           username,
           mediaUrl: result.secure_url,
@@ -42,46 +46,42 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
           views: 0,
           likes: 0,
           comments: 0,
-        });
+        })
 
-        await media.save();
-        res.json(media);
+        return res.status(201).json(media)
       },
-    );
+    )
 
-    uploadStream.end(file.buffer);
-  } catch (err) {
-    console.error("Error subiendo media:", err);
-    res.status(500).json({ error: err.message });
+    // enviar buffer al stream
+    stream.end(file.buffer)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-});
+})
 
-// Listar media trending
+// === GET /api/media/trending ===
 router.get("/trending", async (req, res) => {
   try {
-    const { orderBy = "views", limit = 10 } = req.query;
-    const media = await Media.find()
-      .sort({ [orderBy]: -1 })
-      .limit(Number(limit));
-    res.json(media);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const { orderBy = "views", limit = 10 } = req.query
+    const orderField = ["views", "likes", "createdAt"].includes(orderBy) ? orderBy : "views"
+    const top = await Media.find().sort({ [orderField]: -1 }).limit(Number(limit) || 10)
+    res.json(top)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-});
+})
 
-// Obtener media por id
+// === GET /api/media/:id ===
 router.get("/:id", async (req, res) => {
   try {
-    const media = await Media.findById(req.params.id);
-    if (!media) return res.status(404).json({ error: "Media no encontrada" });
-
-    media.views += 1;
-    await media.save();
-
-    res.json(media);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    const media = await Media.findById(req.params.id)
+    if (!media) return res.status(404).json({ error: "Media no encontrada" })
+    media.views += 1
+    await media.save()
+    res.json(media)
+  } catch (e) {
+    res.status(500).json({ error: e.message })
   }
-});
+})
 
-module.exports = router;
+export default router
