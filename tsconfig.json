@@ -23,36 +23,20 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@/config/*": [
-        "src/config/*"
-      ],
-      "@/models/*": [
-        "src/models/*"
-      ],
-      "@/routes/*": [
-        "src/routes/*"
-      ],
-      "@/middleware/*": [
-        "src/middleware/*"
-      ],
-      "@/types/*": [
-        "src/types/*"
-      ]
+      "@/*": ["src/*"],
+      "@/config/*": ["src/config/*"],
+      "@/models/*": ["src/models/*"],
+      "@/routes/*": ["src/routes/*"],
+      "@/middleware/*": ["src/middleware/*"],
+      "@/types/*": ["src/types/*"]
     },
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
     "moduleResolution": "node",
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx", // Mejor opción moderna para React/Next.js
     "plugins": [
       {
         "name": "next"
@@ -60,12 +44,12 @@
     ]
   },
   "include": [
-    "src/**/*",
-    ".next/types/**/*.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
+    ".next",         // Excluir archivos generados de Next.js
     "**/*.test.ts",
     "**/*.spec.ts"
   ]
