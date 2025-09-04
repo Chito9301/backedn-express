@@ -1,4 +1,3 @@
-// api/media/trending.js
 import dbConnect from "../../lib/dbConnect.js";
 import Media from "../../models/Media.js";
 
