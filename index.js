@@ -21,8 +21,8 @@ import Media from "./models/Media.js";
 // Configuración CORS
 // =======================
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://mi-app-frontend-six.vercel.app",
+  "http://localhost:3000", // desarrollo local
+  "https://mi-app-frontend-six.vercel.app", // frontend en vercel
 ];
 
 const corsOptions = {
@@ -45,7 +45,7 @@ const corsOptions = {
 // =======================
 const app = express();
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("*", cors(corsOptions)); // ✅ Fix preflight requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -96,7 +96,7 @@ app.get("/api/status", async (req, res) => {
       message: "🚀 Backend funcionando correctamente",
       mongoDB: mongoStatus,
       cloudinary: cloudStatus,
-      frontendUrl: process.env.FRONTEND_URL || "No configurado",
+      frontendUrl: process.env.FRONTEND_URL || "https://mi-app-frontend-six.vercel.app",
       stats: { usuarios: userCount, medias: mediaCount },
     });
   } catch (err) {
@@ -279,8 +279,4 @@ app.use((req, res) => {
 // Iniciar servidor
 // =======================
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () =>
-  console.log(`✅ Backend corriendo en puerto ${PORT}`)
-);
-
-export default app;
+app.listen(PORT, () => console.log(`✅ Backend corriendo en puerto ${PORT}`));
