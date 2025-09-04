@@ -37,7 +37,7 @@ app.use(morgan("combined"))
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-app.get("/", (req, res) => {
+app.get("/{*splat}", (req, res) => {
   try {
     const dashboardPath = path.join(__dirname, "../dashboard/index.html")
 
@@ -110,7 +110,7 @@ app.get("/api/status", (req, res) => {
   })
 })
 
-app.get("*", (req, res) => {
+app.get("*/{*splat}", (req, res) => {
   res.status(404).json({
     error: "Ruta no encontrada",
     path: req.path,

@@ -55,7 +55,7 @@ app.use(express.urlencoded({ extended: true }));
 const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir));
 
-app.get("/", (req, res) => {
+app.get("/{*splat}", (req, res) => {
   return res.sendFile(path.join(publicDir, "index.html"), (err) => {
     if (err) {
       console.error("Error sirviendo dashboard:", err);
