@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "dev": "nodemon index.js",
     "start": "node index.js"
   },
@@ -19,6 +20,16 @@
     "multer-storage-cloudinary": "latest"
   },
   "devDependencies": {
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/express-rate-limit": "^6.0.2",
+    "@types/helmet": "^4.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.3.1",
+    "@types/node-cache": "^4.2.5",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "nodemon": "latest"

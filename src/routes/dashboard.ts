@@ -1,11 +1,11 @@
-import express from "express"
-import { User } from "../models/User"
-import { Media } from "../models/Media"
-import { asyncHandler } from "../middleware/errorHandler"
-import { authenticateToken, requireModerator } from "../middleware/auth"
-import { cacheMiddleware } from "../middleware/cache"
+import express, { Request, Response } from "express";
+import { User } from "../models/User";
+import { Media } from "../models/Media";
+import { asyncHandler } from "../middleware/errorHandler";
+import { authenticateToken, requireModerator } from "../middleware/auth";
+import { cacheMiddleware } from "../middleware/cache";
 
-const router = express.Router()
+const router = express.Router();
 
 // =============================================================================
 // DASHBOARD STATISTICS ENDPOINT
@@ -21,29 +21,28 @@ router.get(
   authenticateToken, // Verify JWT token
   requireModerator, // Ensure user has moderator role
   cacheMiddleware(300), // Cache response for 5 minutes
-  asyncHandler(async (req, res) => {
-    // Execute all database queries in parallel for better performance
+  asyncHandler(async (req: Request, res: Response) => {
+    // Ejecutar consultas simultáneamente para mejor rendimiento
     const [totalUsers, totalMedia, activeUsers, recentUploads, topUsers, mediaStats] = await Promise.all([
-      // Count total registered users
+      // Total usuarios registrados
       User.countDocuments(),
 
-      // Count total media files uploaded
+      // Total archivos media subidos
       Media.countDocuments(),
 
-      // Count users who logged in within the last 30 days
+      // Usuarios activos (últimos 30 días)
       User.countDocuments({
         lastLogin: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
       }),
 
-      // Count media uploaded in the last 24 hours
+      // Media subida en últimas 24 horas
       Media.countDocuments({
         createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
       }),
 
-      // Get top 5 users by upload count using aggregation pipeline
+      // Top 5 usuarios con más uploads
       User.aggregate([
         {
-          // Join with media collection to get upload counts
           $lookup: {
             from: "media",
             localField: "_id",
@@ -52,18 +51,17 @@ router.get(
           },
         },
         {
-          // Project only needed fields and calculate upload count
           $project: {
             username: 1,
             email: 1,
             uploadCount: { $size: "$uploads" },
           },
         },
-        { $sort: { uploadCount: -1 } }, // Sort by upload count descending
-        { $limit: 5 }, // Get top 5 users
+        { $sort: { uploadCount: -1 } },
+        { $limit: 5 },
       ]),
 
-      // Calculate media statistics (views, likes, average file size)
+      // Estadísticas agregadas de media: vistas, likes, tamaño medio
       Media.aggregate([
         {
           $group: {
@@ -74,10 +72,10 @@ router.get(
           },
         },
       ]),
-    ])
+    ]);
 
-    // Return structured response with all statistics
-    res.json({
+    // Retornar datos estructurados
+    return res.json({
       success: true,
       stats: {
         totalUsers,
@@ -91,9 +89,9 @@ router.get(
           avgFileSize: 0,
         },
       },
-    })
+    });
   }),
-)
+);
 
 // =============================================================================
 // RECENT ACTIVITY ENDPOINT
@@ -106,34 +104,33 @@ router.get(
  */
 router.get(
   "/activity",
-  authenticateToken, // Verify JWT token
-  requireModerator, // Ensure user has moderator role
-  asyncHandler(async (req, res) => {
-    // Fetch recent users and media in parallel
+  authenticateToken,
+  requireModerator,
+  // Corregido typo 'Resquest' a 'Request' y tipado explícito req, res
+  asyncHandler(async (req: Request, res: Response) => {
+    // Obtener usuarios y media recientes simultáneamente
     const [recentUsers, recentMedia] = await Promise.all([
-      // Get 10 most recently registered users
       User.find()
-        .select("username email createdAt") // Only return necessary fields
-        .sort({ createdAt: -1 }) // Sort by creation date descending
+        .select("username email createdAt")
+        .sort({ createdAt: -1 })
         .limit(10),
 
-      // Get 10 most recently uploaded media files with user info
       Media.find()
-        .populate("uploadedBy", "username") // Include uploader's username
-        .select("title uploadedBy createdAt mimetype") // Only return necessary fields
-        .sort({ createdAt: -1 }) // Sort by creation date descending
+        .populate("uploadedBy", "username")
+        .select("title uploadedBy createdAt mimetype")
+        .sort({ createdAt: -1 })
         .limit(10),
-    ])
+    ]);
 
-    res.json({
+    return res.json({
       success: true,
       activity: {
         recentUsers,
         recentMedia,
       },
-    })
+    });
   }),
-)
+);
 
 // =============================================================================
 // SYSTEM HEALTH ENDPOINT
@@ -146,24 +143,29 @@ router.get(
  */
 router.get(
   "/health",
-  authenticateToken, // Verify JWT token
-  requireModerator, // Ensure user has moderator role
-  asyncHandler(async (req, res) => {
-    let dbStatus
+  authenticateToken,
+  requireModerator,
+  // Tipar req y res explícitamente
+  asyncHandler(async (req: Request, res: Response) => {
+    let dbStatus;
     try {
-      // Ping database to check connectivity
-      dbStatus = await User.db.db.admin().ping()
+      // Se verifica que User.db y User.db.db existan antes de acceder
+      if (User.db && User.db.db) {
+        dbStatus = await User.db.db.admin().ping();
+      } else {
+        // Control en caso de estar undefined
+        dbStatus = { ok: 0 };
+      }
     } catch (error) {
-      dbStatus = { ok: 0 }
+      dbStatus = { ok: 0 };
     }
 
-    res.json({
+    return res.json({
       success: true,
       health: {
         database: dbStatus.ok === 1 ? "healthy" : "unhealthy",
-        uptime: Math.floor(process.uptime()), // Server uptime in seconds
+        uptime: Math.floor(process.uptime()), // Segundos
         memory: {
-          // Memory usage in MB for better readability
           rss: Math.round(process.memoryUsage().rss / 1024 / 1024),
           heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
           heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
@@ -173,8 +175,8 @@ router.get(
         nodeVersion: process.version,
         platform: process.platform,
       },
-    })
+    });
   }),
-)
+);
 
-export default router
+export default router;
