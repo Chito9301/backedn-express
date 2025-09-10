@@ -1,4 +1,23 @@
 // =======================
+// Ruta /api/dashboard: datos reales para el frontend
+// =======================
+app.get("/api/dashboard", async (req, res) => {
+  try {
+    const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
+    const cloudStatus = cloudinary.config().cloud_name ? "Conectado ✅" : "Desconectado ❌";
+    const userCount = await User.countDocuments();
+    const mediaCount = await Media.countDocuments();
+    res.json({
+      mongoDB: mongoStatus,
+      cloudinary: cloudStatus,
+      usuarios: userCount,
+      medias: mediaCount
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Error cargando datos del dashboard" });
+  }
+});
+// =======================
 // Carga variables de entorno
 // =======================
 import "dotenv/config";
@@ -103,10 +122,37 @@ app.get("/api/status", async (req, res) => {
       mongoDB: mongoStatus,
       cloudinary: cloudStatus,
       frontendUrl: process.env.FRONTEND_URL || "https://mi-app-frontend-six.vercel.app",
-      stats: { usuarios: userCount, medias: mediaCount },
+      stats: { usuarios: userCount, medias: mediaCount }
     });
   } catch (err) {
     res.status(500).json({ error: "Error cargando dashboard" });
+  }
+});
+
+// =======================
+// Ruta /dashboard: autenticación básica y datos reales
+// =======================
+app.get("/dashboard", async (req, res) => {
+  // Autenticación básica
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith("Basic ")) {
+    res.setHeader("WWW-Authenticate", "Basic realm='Dashboard'");
+    return res.status(401).send("Autenticación requerida");
+  }
+  const credentials = Buffer.from(auth.split(" ")[1], "base64").toString().split(":");
+  const [user, pass] = credentials;
+  if (user !== "admin" || pass !== "admin") {
+    return res.status(403).send("Credenciales inválidas");
+  }
+  try {
+    // Obtener datos reales del backend
+    const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
+    const cloudStatus = cloudinary.config().cloud_name ? "Conectado ✅" : "Desconectado ❌";
+    const userCount = await User.countDocuments();
+    const mediaCount = await Media.countDocuments();
+    res.sendFile(path.join(publicDir, "index.html"));
+  } catch (err) {
+    res.status(500).send("Error cargando dashboard");
   }
 });
 
