@@ -55,7 +55,8 @@ app.use(express.urlencoded({ extended: true }));
 const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir));
 
-app.get("/{*splat}", (req, res) => {
+// NOTA: Cambié esta ruta a formato correcto para Express 5 - wildcard nombrado sin llaves
+app.get("/*splat", (req, res) => {
   return res.sendFile(path.join(publicDir, "index.html"), (err) => {
     if (err) {
       console.error("Error sirviendo dashboard:", err);
@@ -130,7 +131,6 @@ const upload = multer({ storage });
 // =======================
 // Rutas Auth
 // =======================
-
 // Registro
 app.post("/api/auth/register", async (req, res) => {
   try {
@@ -271,6 +271,7 @@ app.get("/api/users/profile", authMiddleware, async (req, res) => {
 // =======================
 // Manejo de rutas inválidas
 // =======================
+// Mantener así, sin wildcard explícito para evitar error
 app.use((req, res) => {
   res.status(404).json({ error: "Ruta no encontrada" });
 });

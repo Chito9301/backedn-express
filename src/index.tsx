@@ -9,14 +9,14 @@ import fs from "fs"
 
 const app = express()
 
-// Security middleware
+// Middleware de seguridad
 app.use(
   helmet({
-    contentSecurityPolicy: false, // Disable for dashboard functionality
+    contentSecurityPolicy: false, // Deshabilitado para funcionalidad del dashboard
   }),
 )
 
-// CORS configuration
+// Configuración de CORS
 app.use(
   cors({
     origin: process.env.FRONTEND_URL || "*",
@@ -24,28 +24,30 @@ app.use(
   }),
 )
 
-// Rate limiting
+// Límite de peticiones
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // máximo 100 peticiones por IP y ventana
 })
 app.use(limiter)
 
-// Basic middleware
+// Middleware básico
 app.use(compression())
 app.use(morgan("combined"))
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-app.get("/{*splat}", (req, res) => {
+// Ruta para servir el dashboard
+// Corregido wildcard nombrado sin llaves y con /*splat
+app.get("/*splat", (req, res) => {
   try {
     const dashboardPath = path.join(__dirname, "../dashboard/index.html")
 
-    // Check if file exists
+    // Verificar si existe el archivo
     if (fs.existsSync(dashboardPath)) {
       res.sendFile(dashboardPath)
     } else {
-      // Fallback HTML if file doesn't exist
+      // HTML alternativo si no existe archivo
       res.send(`
         <!DOCTYPE html>
         <html lang="es">
@@ -93,6 +95,7 @@ app.get("/{*splat}", (req, res) => {
   }
 })
 
+// Ruta para chequeo de salud del sistema
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
@@ -102,6 +105,7 @@ app.get("/api/health", (req, res) => {
   })
 })
 
+// Ruta para estado API
 app.get("/api/status", (req, res) => {
   res.json({
     message: "Backend API funcionando correctamente",
@@ -110,7 +114,9 @@ app.get("/api/status", (req, res) => {
   })
 })
 
-app.get("*/{*splat}", (req, res) => {
+// Manejo de rutas no encontradas (404)
+// También corregido wildcard con nombre sin llaves
+app.get("/*splat", (req, res) => {
   res.status(404).json({
     error: "Ruta no encontrada",
     path: req.path,

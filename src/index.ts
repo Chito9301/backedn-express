@@ -151,14 +151,15 @@ app.get("/dashboard", (req, res) => {
 // ERROR HANDLING
 // =============================================================================
 
-// 404 handler for undefined routes
-app.use("*", (req, res) => {
+// 404 catcher - para rutas no encontradas
+app.use((req, res) => {
   res.status(404).json({
+    success: false,
     error: "Route not found",
     path: req.originalUrl,
     method: req.method,
-  })
-})
+  });
+});
 
 // Global error handling middleware (must be last)
 app.use(errorHandler)
