@@ -18,34 +18,38 @@ import User from "./models/User.js";
 import Media from "./models/Media.js";
 
 // =======================
-// Configuración CORS
+// Configuración CORS robusta y explicativa
 // =======================
 const allowedOrigins = [
   "http://localhost:3000", // desarrollo local
   "https://mi-app-frontend-six.vercel.app", // frontend en vercel
+  // Agrega aquí otros dominios permitidos
 ];
 
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS: El origen ${origin} no está permitido.`));
+// Middleware CORS personalizado para control total
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+  }
+  // Si el origen no está permitido, mostrar error claro en preflight
+  if (req.method === "OPTIONS") {
+    if (!allowedOrigins.includes(origin)) {
+      return res.status(403).json({ error: `CORS: El origen ${origin} no está permitido.` });
     }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
-};
+    res.setHeader("Allow", "GET,POST,PUT,DELETE,OPTIONS");
+    return res.sendStatus(204); // Preflight OK
+  }
+  next();
+});
 
 // =======================
 // Crear servidor Express
 // =======================
 const app = express();
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // ✅ Fix preflight requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

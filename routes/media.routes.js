@@ -16,8 +16,8 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     const file = req.file
     const { title, description, hashtags, type } = req.body || {}
-    if (!file) return res.status(400).json({ error: "No file uploaded" })
-    if (!type) return res.status(400).json({ error: "type es requerido (image|video|audio|document)" })
+    if (!file) return res.status(400).json({ success: false, error: "No file uploaded" })
+    if (!type) return res.status(400).json({ success: false, error: "type es requerido (image|video|audio|document)" })
 
     const username = req.user?.username || "anonymous"
 
@@ -30,7 +30,7 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
       async (error, result) => {
         if (error) {
           console.error("Cloudinary upload error:", error)
-          return res.status(500).json({ error: error.message })
+          return res.status(500).json({ success: false, error: error.message })
         }
 
         const media = await Media.create({
@@ -48,14 +48,14 @@ router.post("/", authMiddleware, upload.single("file"), async (req, res) => {
           comments: 0,
         })
 
-        return res.status(201).json(media)
+        return res.status(201).json({ success: true, media })
       },
     )
 
     // enviar buffer al stream
     stream.end(file.buffer)
   } catch (e) {
-    res.status(500).json({ error: e.message })
+    res.status(500).json({ success: false, error: e.message })
   }
 })
 
@@ -65,9 +65,9 @@ router.get("/trending", async (req, res) => {
     const { orderBy = "views", limit = 10 } = req.query
     const orderField = ["views", "likes", "createdAt"].includes(orderBy) ? orderBy : "views"
     const top = await Media.find().sort({ [orderField]: -1 }).limit(Number(limit) || 10)
-    res.json(top)
+    res.json({ success: true, data: top })
   } catch (e) {
-    res.status(500).json({ error: e.message })
+    res.status(500).json({ success: false, error: e.message })
   }
 })
 
@@ -75,12 +75,12 @@ router.get("/trending", async (req, res) => {
 router.get("/:id", async (req, res) => {
   try {
     const media = await Media.findById(req.params.id)
-    if (!media) return res.status(404).json({ error: "Media no encontrada" })
+    if (!media) return res.status(404).json({ success: false, error: "Media no encontrada" })
     media.views += 1
     await media.save()
-    res.json(media)
+    res.json({ success: true, media })
   } catch (e) {
-    res.status(500).json({ error: e.message })
+    res.status(500).json({ success: false, error: e.message })
   }
 })
 
