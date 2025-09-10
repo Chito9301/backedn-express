@@ -42,23 +42,28 @@ Backend completo desarrollado con Express.js que incluye autenticación JWT, sub
 
 ### Autenticación
 
-- `POST /api/auth/register` - Registrar usuario
-- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/register` - Registrar usuario. Body: `{ username, email, password }`. Responde con mensaje de éxito o error.
+- `POST /api/auth/login` - Iniciar sesión. Body: `{ email, password }`. Responde con token JWT y datos del usuario.
 
 ### Medios
 
-- `POST /api/media` - Subir archivo (requiere autenticación)
-- `GET /api/media/trending` - Obtener medios trending
-- `GET /api/media/:id` - Obtener medio por ID
+- `POST /api/media` - Subir archivo (requiere autenticación JWT). Body: `{ title, description, hashtags, type }` y archivo en campo `file`. Responde con datos del medio subido.
+- `GET /api/media/trending` - Obtener medios trending. Query: `orderBy`, `limit`. Responde con `{ success, data }` o error.
+- `GET /api/media/:id` - Obtener medio por ID. Responde con datos del medio o error.
 
 ### Usuarios
 
-- `GET /api/users/profile` - Obtener perfil (requiere autenticación)
+- `GET /api/users/profile` - Obtener perfil del usuario autenticado. Requiere JWT. Responde con datos del usuario.
 
 ### Sistema
 
-- `GET /api/status` - Estado del servidor y estadísticas
-- `GET /dashboard` - Dashboard web estático
+- `GET /api/status` - Estado del backend y estadísticas. Responde con estado de MongoDB, Cloudinary y estadísticas.
+- `GET /dashboard` - Dashboard web protegido por JWT. Devuelve el archivo `index.html` si el usuario está autenticado.
+
+### Errores y rutas inválidas
+
+- Todas las rutas devuelven JSON consistente con `success: false` y mensaje de error en español si ocurre algún problema.
+- Las rutas no encontradas devuelven `{ success: false, error: "Ruta no encontrada" }` con status 404.
 
 ## Ejemplo para crear un usuario válido
 
