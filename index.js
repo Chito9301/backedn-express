@@ -37,6 +37,13 @@ import User from "./models/User.js";
 import Media from "./models/Media.js";
 
 // =======================
+// Crear servidor Express
+// =======================
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// =======================
 // Configuración CORS robusta y explicativa
 // =======================
 const allowedOrigins = [
@@ -64,13 +71,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-// =======================
-// Crear servidor Express
-// =======================
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // =======================
 // Servir dashboard estático
