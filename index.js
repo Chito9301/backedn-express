@@ -1,23 +1,4 @@
 // =======================
-// Ruta /api/dashboard: datos reales para el frontend
-// =======================
-app.get("/api/dashboard", async (req, res) => {
-  try {
-    const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
-    const cloudStatus = cloudinary.config().cloud_name ? "Conectado ✅" : "Desconectado ❌";
-    const userCount = await User.countDocuments();
-    const mediaCount = await Media.countDocuments();
-    res.json({
-      mongoDB: mongoStatus,
-      cloudinary: cloudStatus,
-      usuarios: userCount,
-      medias: mediaCount
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Error cargando datos del dashboard" });
-  }
-});
-// =======================
 // Carga variables de entorno
 // =======================
 import "dotenv/config";
