@@ -8,6 +8,10 @@ import { clearCache } from "../middleware/cache";
 
 const router = express.Router();
 
+// Si tienes rutas wildcard en este archivo, usa el formato correcto para Express 5:
+// Ejemplo:
+// router.get('/:wildcard(*)', handler);
+
 // Get all users (Admin only)
 router.get(
   "/",
@@ -171,5 +175,7 @@ router.delete(
     });
   })
 );
+
+// No se encontraron rutas wildcard en este archivo, pero si agregas una, usa el formato /:param(*)
 
 export default router;

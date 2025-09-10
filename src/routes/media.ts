@@ -288,4 +288,8 @@ router.get(
   })
 );
 
+// Si tienes rutas wildcard en este archivo, usa el formato correcto para Express 5:
+// Ejemplo:
+// router.get('/:wildcard(*)', handler);
+
 export default router;

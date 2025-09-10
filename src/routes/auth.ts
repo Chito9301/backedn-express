@@ -6,6 +6,10 @@ import { authenticateToken, type AuthRequest } from "../middleware/auth";
 
 const router = express.Router();
 
+// Si tienes rutas wildcard en este archivo, usa el formato correcto para Express 5:
+// Ejemplo:
+// router.get('/:wildcard(*)', handler);
+
 // Registro de usuario
 router.post(
   "/register",
@@ -146,5 +150,7 @@ router.post(
     });
   }),
 );
+
+// No se encontraron rutas wildcard en este archivo, pero si agregas una, usa el formato /:param(*)
 
 export default router;
