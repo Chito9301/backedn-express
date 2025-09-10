@@ -17,7 +17,8 @@
     "jsonwebtoken": "latest",
     "mongoose": "latest",
     "multer": "latest",
-    "multer-storage-cloudinary": "latest"
+    "multer-storage-cloudinary": "latest",
+    "next": "^15.5.2"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",

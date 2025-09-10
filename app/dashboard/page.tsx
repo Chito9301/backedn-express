@@ -1,4 +1,42 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 export default function DashboardPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [valid, setValid] = useState(false);
+
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) {
+      router.replace("/dashboard/login");
+      return;
+    }
+    // Validar el token con el backend
+    fetch("/api/status", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem("token");
+          router.replace("/dashboard/login");
+          setValid(false);
+        } else {
+          setValid(true);
+        }
+        setLoading(false);
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        router.replace("/dashboard/login");
+        setLoading(false);
+      });
+  }, [router]);
+
+  if (loading) return <div>Cargando...</div>;
+  if (!valid) return null;
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="flex">

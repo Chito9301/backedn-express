@@ -20,7 +20,9 @@ import Media from "./models/Media.js";
 // =======================
 // Crear servidor Express
 // =======================
+// Declaramos 'app' antes de cualquier uso para evitar errores de inicialización
 const app = express();
+// Middleware para parsear JSON y urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -35,6 +37,7 @@ const allowedOrigins = [
 
 // Middleware CORS personalizado para control total
 app.use((req, res, next) => {
+  // Configura CORS solo si el origen está permitido
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -42,7 +45,7 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  // Si el origen no está permitido, mostrar error claro en preflight
+  // Manejo de preflight OPTIONS
   if (req.method === "OPTIONS") {
     if (!allowedOrigins.includes(origin)) {
       return res.status(403).json({ error: `CORS: El origen ${origin} no está permitido.` });
@@ -59,9 +62,9 @@ app.use((req, res, next) => {
 const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir));
 
-// NOTA: Cambié esta ruta a formato correcto para Express 5 - wildcard nombrado con parámetro y asterisco
+// Ruta wildcard para servir el dashboard (Express 5 compatible)
 app.get("/:splat(*)", (req, res) => {
-  // Se corrigió el nombre del parámetro wildcard para Express 5 (de /*:splat a /:splat(*))
+  // Servimos el archivo index.html del dashboard
   return res.sendFile(path.join(publicDir, "index.html"), (err) => {
     if (err) {
       console.error("Error sirviendo dashboard:", err);
@@ -88,16 +91,13 @@ function authMiddleware(req, res, next) {
 // =======================
 // Dashboard API status
 // =======================
+// Endpoint para obtener el estado del backend y estadísticas
 app.get("/api/status", async (req, res) => {
   try {
-    const mongoStatus =
-      mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
-    const cloudStatus = cloudinary.config().cloud_name
-      ? "Conectado ✅"
-      : "Desconectado ❌";
+    const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
+    const cloudStatus = cloudinary.config().cloud_name ? "Conectado ✅" : "Desconectado ❌";
     const userCount = await User.countDocuments();
     const mediaCount = await Media.countDocuments();
-
     res.json({
       message: "🚀 Backend funcionando correctamente",
       mongoDB: mongoStatus,
@@ -111,26 +111,12 @@ app.get("/api/status", async (req, res) => {
 });
 
 // =======================
-// Ruta /dashboard: autenticación básica y datos reales
+// Ruta /dashboard protegida por JWT
 // =======================
-app.get("/dashboard", async (req, res) => {
-  // Autenticación básica
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith("Basic ")) {
-    res.setHeader("WWW-Authenticate", "Basic realm='Dashboard'");
-    return res.status(401).send("Autenticación requerida");
-  }
-  const credentials = Buffer.from(auth.split(" ")[1], "base64").toString().split(":");
-  const [user, pass] = credentials;
-  if (user !== "admin" || pass !== "admin") {
-    return res.status(403).send("Credenciales inválidas");
-  }
+// Ahora el acceso al dashboard requiere autenticación JWT
+app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
-    // Obtener datos reales del backend
-    const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
-    const cloudStatus = cloudinary.config().cloud_name ? "Conectado ✅" : "Desconectado ❌";
-    const userCount = await User.countDocuments();
-    const mediaCount = await Media.countDocuments();
+    // Si el usuario está autenticado, servimos el dashboard
     res.sendFile(path.join(publicDir, "index.html"));
   } catch (err) {
     res.status(500).send("Error cargando dashboard");
@@ -303,9 +289,9 @@ app.get("/api/users/profile", authMiddleware, async (req, res) => {
 // =======================
 // Manejo de rutas inválidas
 // =======================
-// Se corrigió ruta wildcard sin nombre para compatibilidad con Express 5 (de /*:path a /:path(*))
-app.use("/:path(*)", (req, res) => {
-  res.status(404).send("Not Found");
+// Handler para rutas no encontradas (404)
+app.use(":path(*)", (req, res) => {
+  res.status(404).json({ success: false, error: "Ruta no encontrada" });
 });
 
 // =======================
