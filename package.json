@@ -13,7 +13,7 @@
     "cloudinary": "latest",
     "cors": "^2.8.5",
     "dotenv": "latest",
-    "express": "latest",
+    "express": "^4.21.2",
     "jsonwebtoken": "latest",
     "mongoose": "latest",
     "multer": "latest",
