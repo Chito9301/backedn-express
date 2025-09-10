@@ -1,4 +1,37 @@
 // =======================
+// Ruta /api/media/trending: devuelve medios trending en formato JSON seguro
+// =======================
+app.get("/api/media/trending", async (req, res) => {
+  res.setHeader("Content-Type", "application/json");
+  const { orderBy = "views", limit = 10 } = req.query;
+  const validFields = ["views", "likes", "comments", "createdAt"];
+  const sortField = validFields.includes(orderBy) ? orderBy : "views";
+  const lim = Number(limit);
+
+  // Validación de parámetros
+  if (isNaN(lim) || lim < 1 || lim > 100) {
+    return res.status(400).json({
+      success: false,
+      error: "El parámetro 'limit' debe ser un número entre 1 y 100."
+    });
+  }
+
+  try {
+    const media = await Media.find()
+      .sort({ [sortField]: -1 })
+      .limit(lim);
+    return res.status(200).json({
+      success: true,
+      data: media
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      error: "Error interno al obtener los medios trending."
+    });
+  }
+});
+// =======================
 // Carga variables de entorno
 // =======================
 import "dotenv/config";
