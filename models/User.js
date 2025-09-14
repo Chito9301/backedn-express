@@ -19,53 +19,45 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       validate: {
         validator: (v) => /^\S+@\S+\.\S+$/.test(v),
-        message: props => `${props.value} no es un email válido`,
+        message: (props) => `${props.value} no es un email válido`,
       },
     },
     password: {
       type: String,
       required: true,
       minlength: 6,
-      select: false, // no incluir password en consultas por defecto
-    },
-    createdAt: {
-      type: Date,
-      default: () => new Date(),
-      immutable: true,
-    },
-    updatedAt: {
-      type: Date,
-      default: () => new Date(),
+      select: false, // No incluir password por defecto en consultas
     },
   },
   {
-    timestamps: true, // mongoose actualiza createdAt y updatedAt automáticamente
+    timestamps: true,
     toJSON: {
-      // controlar serialización a JSON
       transform: (doc, ret) => {
-        delete ret.password; // eliminar password del JSON
-        delete ret.__v;      // eliminar versión
+        delete ret.password;
+        delete ret.__v;
         return ret;
       },
     },
   }
 );
 
-// Middleware para hashear la contraseña antes de guardar si se modificó
+// Middleware para hashear contraseña antes de guardar
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-    return next();
+    next();
   } catch (error) {
-    return next(error);
+    next(error);
   }
 });
 
-// Método para comparar contraseña de forma segura
+// Método para comparar contraseña, debe cargar el password explícitamente
 userSchema.methods.comparePassword = async function (candidatePassword) {
+  // this.password puede no estar cargado por select:false, asegurarse de que esté
+  if (!this.password) throw new Error("Password no está cargado");
   return bcrypt.compare(candidatePassword, this.password);
 };
 
