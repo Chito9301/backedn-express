@@ -26,8 +26,8 @@ export function authMiddleware(req, res, next) {
   }
 }
 
-// === POST /api/auth/signup ===
-router.post("/signup", async (req, res) => {
+// === POST /api/auth/register ===
+router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body || {}
     if (!username || !email || !password) {
