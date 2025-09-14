@@ -31,12 +31,10 @@ app.use(express.urlencoded({ extended: true }));
 const allowedOrigins = [
   "http://localhost:3000", // desarrollo local
   "https://mi-app-frontend-six.vercel.app", // frontend en vercel
-  // Agrega aquí otros dominios permitidos
 ];
 
-// Middleware CORS personalizado para control total
+// Middleware CORS personalizado
 app.use((req, res, next) => {
-  // Configura CORS solo si el origen está permitido
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
@@ -44,13 +42,12 @@ app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
     res.setHeader("Access-Control-Allow-Credentials", "true");
   }
-  // Manejo de preflight OPTIONS
   if (req.method === "OPTIONS") {
     if (!allowedOrigins.includes(origin)) {
       return res.status(403).json({ error: `CORS: El origen ${origin} no está permitido.` });
     }
     res.setHeader("Allow", "GET,POST,PUT,DELETE,OPTIONS");
-    return res.sendStatus(204); // Preflight OK
+    return res.sendStatus(204);
   }
   next();
 });
@@ -60,52 +57,6 @@ app.use((req, res, next) => {
 // =======================
 const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir));
-
-// =======================
-// Ruta /api/media/trending: devuelve medios trending en formato JSON seguro
-// =======================
-app.get("/api/media/trending", async (req, res) => {
-  res.setHeader("Content-Type", "application/json");
-  const { orderBy = "views", limit = 10 } = req.query;
-  const validFields = ["views", "likes", "comments", "createdAt"];
-  const sortField = validFields.includes(orderBy) ? orderBy : "views";
-  const lim = Number(limit);
-
-  // Validación de parámetros
-  if (isNaN(lim) || lim < 1 || lim > 100) {
-    return res.status(400).json({
-      success: false,
-      error: "El parámetro 'limit' debe ser un número entre 1 y 100."
-    });
-  }
-
-  try {
-    const media = await Media.find()
-      .sort({ [sortField]: -1 })
-      .limit(lim);
-    return res.status(200).json({
-      success: true,
-      data: media
-    });
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: "Error interno al obtener los medios trending."
-    });
-  }
-});
-
-// =======================
-// Ruta wildcard para servir el dashboard (Express 5 compatible)
-app.get("/:splat(*)", (req, res) => {
-  // Servimos el archivo index.html del dashboard
-  return res.sendFile(path.join(publicDir, "index.html"), (err) => {
-    if (err) {
-      console.error("Error sirviendo dashboard:", err);
-      res.status(500).send("Error cargando dashboard");
-    }
-  });
-});
 
 // =======================
 // Middleware autenticación JWT
@@ -125,7 +76,6 @@ function authMiddleware(req, res, next) {
 // =======================
 // Dashboard API status
 // =======================
-// Endpoint para obtener el estado del backend y estadísticas
 app.get("/api/status", async (req, res) => {
   try {
     const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
@@ -147,10 +97,8 @@ app.get("/api/status", async (req, res) => {
 // =======================
 // Ruta /dashboard protegida por JWT
 // =======================
-// Ahora el acceso al dashboard requiere autenticación JWT
 app.get("/dashboard", authMiddleware, async (req, res) => {
   try {
-    // Si el usuario está autenticado, servimos el dashboard
     res.sendFile(path.join(publicDir, "index.html"));
   } catch (err) {
     res.status(500).send("Error cargando dashboard");
@@ -183,6 +131,7 @@ const upload = multer({ storage });
 // =======================
 // Rutas Auth
 // =======================
+
 // Registro
 app.post("/api/auth/register", async (req, res) => {
   try {
@@ -234,6 +183,8 @@ app.post("/api/auth/login", async (req, res) => {
 // =======================
 // Rutas Media
 // =======================
+
+// Subir media
 app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     const { title, description, hashtags, type } = req.body;
@@ -281,9 +232,6 @@ app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) =
 });
 
 // Listar media trending
-// =======================
-// Ruta /api/media/trending: devuelve medios trending en formato JSON seguro
-// =======================
 app.get("/api/media/trending", async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   const { orderBy = "views", limit = 10 } = req.query;
@@ -291,7 +239,6 @@ app.get("/api/media/trending", async (req, res) => {
   const sortField = validFields.includes(orderBy) ? orderBy : "views";
   const lim = Number(limit);
 
-  // Validación de parámetros
   if (isNaN(lim) || lim < 1 || lim > 100) {
     return res.status(400).json({
       success: false,
@@ -343,12 +290,22 @@ app.get("/api/users/profile", authMiddleware, async (req, res) => {
 });
 
 // =======================
-// Manejo de rutas inválidas
+// Handler 404
 // =======================
-// Handler para rutas no encontradas (404)
-// Handler para rutas no encontradas (404) Express 5 compatible
-app.use("/:path(*)", (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ success: false, error: "Ruta no encontrada" });
+});
+
+// =======================
+// Wildcard para frontend (debe ir al final)
+// =======================
+app.get("/:splat(*)", (req, res) => {
+  return res.sendFile(path.join(publicDir, "index.html"), (err) => {
+    if (err) {
+      console.error("Error sirviendo dashboard:", err);
+      res.status(500).send("Error cargando dashboard");
+    }
+  });
 });
 
 // =======================
