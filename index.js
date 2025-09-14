@@ -10,7 +10,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import path from "path";
-
+import authRoutes from "./routes/auth.routes.js";
 // =======================
 // Modelos
 // =======================
@@ -32,7 +32,7 @@ const allowedOrigins = [
   "http://localhost:3000", // desarrollo local
   "https://mi-app-frontend-six.vercel.app", // frontend en vercel
 ];
-
+app.use("/api/auth", authRoutes);
 // Middleware CORS personalizado
 app.use((req, res, next) => {
   const origin = req.headers.origin;
