@@ -1,95 +1,109 @@
-// routes/auth.routes.js
-import { Router } from "express"
-import jwt from "jsonwebtoken"
-import bcrypt from "bcryptjs"
-import User from "../models/User.js"
+import { Router } from "express";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const router = Router()
+const router = Router();
 
-// === Middleware de autenticación (exportado para otras rutas) ===
+// Middleware para verificar JWT
 export function authMiddleware(req, res, next) {
-  try {
-    const authHeader = req.headers["authorization"]
-    const token = authHeader && authHeader.split(" ")[1]
-    if (!token) return res.status(401).json({ error: "Token requerido" })
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token requerido" });
 
-    const secret = process.env.JWT_SECRET
-    if (!secret) return res.status(500).json({ error: "JWT_SECRET no configurado" })
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return res.status(500).json({ error: "JWT_SECRET no configurado" });
 
-    jwt.verify(token, secret, (err, user) => {
-      if (err) return res.status(403).json({ error: "Token inválido" })
-      req.user = user
-      next()
-    })
-  } catch (e) {
-    res.status(500).json({ error: e.message })
-  }
+  jwt.verify(token, secret, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token inválido" });
+    req.user = user;
+    next();
+  });
 }
 
-// === POST /api/auth/register ===
+// Registro de usuario
 router.post("/register", async (req, res) => {
   try {
-    const { username, email, password } = req.body || {}
-    if (!username || !email || !password) {
-      return res.status(400).json({ success: false, error: "Todos los campos son requeridos" })
-    }
+    const { username, email, password } = req.body;
 
-    const exists = await User.findOne({ $or: [{ email }, { username }] })
-    if (exists) return res.status(409).json({ success: false, error: "Usuario o email ya existe" })
+    if (!username || !email || !password)
+      return res.status(400).json({ success: false, error: "Todos los campos son requeridos" });
 
-    const hashed = await bcrypt.hash(password, 10)
-    const user = await User.create({ username, email, password: hashed })
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existingUser)
+      return res.status(409).json({ success: false, error: "Usuario o email ya existe" });
 
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: "7d" })
-    return res.status(201).json({
+    // Crea usuario; el hashing se hace automáticamente en el middleware 'pre save' del modelo
+    const user = new User({ username, email, password });
+    await user.save();
+
+    const token = jwt.sign(
+      { id: user._id.toString(), username: user.username, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.status(201).json({
       success: true,
       token,
-      user: { id: user._id, username: user.username, email: user.email },
-    })
-  } catch (e) {
-    // Manejo de índice único duplicado de Mongo
-    if (e?.code === 11000) {
-      const field = Object.keys(e.keyPattern || {})[0] || "campo"
-      return res.status(409).json({ success: false, error: `El ${field} ya está en uso` })
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    if (err.code === 11000) {
+      const duplicatedKey = Object.keys(err.keyValue)[0];
+      return res.status(409).json({ success: false, error: `El ${duplicatedKey} ya está en uso` });
     }
-    res.status(500).json({ success: false, error: e.message })
+    res.status(500).json({ success: false, error: err.message });
   }
-})
+});
 
-// === POST /api/auth/login ===
+// Login de usuario
 router.post("/login", async (req, res) => {
   try {
-    const { email, username, password } = req.body || {}
-    if ((!email && !username) || !password) {
-      return res.status(400).json({ success: false, error: "Email/Usuario y contraseña son requeridos" })
-    }
+    const { email, password } = req.body;
 
-    const user = await User.findOne(email ? { email } : { username })
-    if (!user) return res.status(400).json({ success: false, error: "Usuario no encontrado" })
+    if (!email || !password)
+      return res.status(400).json({ success: false, error: "Email y contraseña son requeridos" });
 
-    const ok = await bcrypt.compare(password, user.password)
-    if (!ok) return res.status(400).json({ success: false, error: "Contraseña incorrecta" })
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) return res.status(401).json({ success: false, error: "Credenciales inválidas" });
 
-    const token = jwt.sign({ id: user._id, username: user.username }, process.env.JWT_SECRET, { expiresIn: "7d" })
-    return res.json({
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) return res.status(401).json({ success: false, error: "Credenciales inválidas" });
+
+    const token = jwt.sign(
+      { id: user._id.toString(), username: user.username, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    res.json({
       success: true,
       token,
-      user: { id: user._id, username: user.username, email: user.email },
-    })
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message })
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
-})
+});
 
-// === GET /api/auth/me ===
+// Obtener perfil del usuario autenticado
 router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password")
-    if (!user) return res.status(404).json({ success: false, error: "Usuario no encontrado" })
-    res.json({ success: true, user })
-  } catch (e) {
-    res.status(500).json({ success: false, error: e.message })
-  }
-})
+    const user = await User.findById(req.user.id).select("-password -__v");
+    if (!user) return res.status(404).json({ success: false, error: "Usuario no encontrado" });
 
-export default router
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+export default router;
