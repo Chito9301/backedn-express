@@ -20,8 +20,6 @@ const userSchema = new mongoose.Schema(
       validate: {
         validator: (v) => /^\S+@\S+\.\S+$/.test(v),
         message: (props) => `${props.value} no es un email válido`,
-        resetPasswordToken: String,
-        resetPasswordExpires: Date,
       },
     },
     password: {
@@ -30,6 +28,9 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // No incluir password por defecto en consultas
     },
+    // Campos para recuperación de contraseña
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   {
     timestamps: true,
@@ -58,8 +59,12 @@ userSchema.pre("save", async function (next) {
 
 // Método para comparar contraseña
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  if (!this.password) return false; // más seguro que lanzar error
-  return bcrypt.compare(candidatePassword, this.password);
+  if (!candidatePassword || !this.password) return false;
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (err) {
+    return false;
+  }
 };
 
 // Exportar con protección contra OverwriteModelError
