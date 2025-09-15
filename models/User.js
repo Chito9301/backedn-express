@@ -54,11 +54,11 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Método para comparar contraseña, debe cargar el password explícitamente
+// Método para comparar contraseña
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  // this.password puede no estar cargado por select:false, asegurarse de que esté
-  if (!this.password) throw new Error("Password no está cargado");
+  if (!this.password) return false; // más seguro que lanzar error
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-export default mongoose.model("User", userSchema);
+// Exportar con protección contra OverwriteModelError
+export default mongoose.models.User || mongoose.model("User", userSchema);
