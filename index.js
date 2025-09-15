@@ -97,7 +97,7 @@ app.get("/api/status", async (req, res) => {
 // Ruta /dashboard protegida por JWT
 // =======================
 app.get("/dashboard", authMiddleware, (req, res) => {
-  res.sendFile(path.join(publicDir, "index.html"));
+  res.sendFile(path.join(publicDir, "login.html"));
 });
 
 // =======================
