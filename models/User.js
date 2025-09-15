@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema(
       validate: {
         validator: (v) => /^\S+@\S+\.\S+$/.test(v),
         message: (props) => `${props.value} no es un email válido`,
+        resetPasswordToken: String,
+        resetPasswordExpires: Date,
       },
     },
     password: {

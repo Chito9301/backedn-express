@@ -1,10 +1,15 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import User from "../models/User.js";
+import sendEmail from "../utils/sendEmail.js"; // 👉 función que debes implementar para enviar emails
 
 const router = Router();
 
+// =============================
 // Middleware para verificar JWT
+// =============================
 export function authMiddleware(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -20,7 +25,9 @@ export function authMiddleware(req, res, next) {
   });
 }
 
+// =============================
 // Registro de usuario
+// =============================
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -32,7 +39,6 @@ router.post("/register", async (req, res) => {
     if (existingUser)
       return res.status(409).json({ success: false, error: "Usuario o email ya existe" });
 
-    // Crea usuario; el hashing se hace automáticamente en el middleware 'pre save' del modelo
     const user = new User({ username, email, password });
     await user.save();
 
@@ -60,7 +66,9 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// =============================
 // Login de usuario
+// =============================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -94,7 +102,17 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// Obtener perfil del usuario autenticado
+// =============================
+// Logout de usuario (opcional)
+// =============================
+router.post("/logout", (req, res) => {
+  // Si usas JWT no hay sesión en servidor, el frontend solo borra el token
+  res.json({ success: true, message: "Logout exitoso" });
+});
+
+// =============================
+// Obtener perfil del usuario
+// =============================
 router.get("/me", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password -__v");
@@ -103,6 +121,65 @@ router.get("/me", authMiddleware, async (req, res) => {
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =============================
+// Forgot Password (solicitar reset)
+// =============================
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email requerido" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ error: "No existe una cuenta con este correo electrónico" });
+
+    // Generar token de reseteo
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+    user.resetPasswordToken = resetTokenHash;
+    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 minutos
+    await user.save();
+
+    // Enlace que llegará por email
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // Enviar correo (implementa sendEmail en utils)
+    await sendEmail(user.email, "Restablece tu contraseña", `Haz clic en el enlace para resetear tu contraseña: ${resetUrl}`);
+
+    res.json({ success: true, message: "Se envió un enlace de recuperación a tu correo" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// =============================
+// Reset Password (usar token)
+// =============================
+router.post("/reset-password/:token", async (req, res) => {
+  try {
+    const resetTokenHash = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+    const user = await User.findOne({
+      resetPasswordToken: resetTokenHash,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ error: "Token inválido o expirado" });
+
+    const { password } = req.body;
+    if (!password) return res.status(400).json({ error: "Nueva contraseña requerida" });
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ success: true, message: "Contraseña restablecida con éxito" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
