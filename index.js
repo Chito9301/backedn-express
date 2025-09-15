@@ -1,5 +1,3 @@
-// index.js o server.js
-
 // =======================
 // Carga variables de entorno
 // =======================
@@ -83,8 +81,8 @@ function authMiddleware(req, res, next) {
 // Ruta protegida /dashboard que sirve archivo público o SPA
 // =======================
 app.get("/dashboard", authMiddleware, (req, res) => {
-  // sirve archivo estático protegido, o SPA index.html
-  res.sendFile(path.join(publicDir, "index.html"));
+  // sirve archivo estático protegido, o SPA login.html
+  res.sendFile(path.join(publicDir, "login.html"));
 });
 
 // =======================
@@ -142,7 +140,7 @@ app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api") || req.path.includes(".")) {
     return next();
   }
-  res.sendFile(path.join(publicDir, "index.html"));
+  res.sendFile(path.join(publicDir, "login.html"));
 });
 
 // =======================
