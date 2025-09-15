@@ -26,14 +26,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // =======================
-// Configuración CORS robusta y explicativa
+// Configuración CORS robusta
 // =======================
 const allowedOrigins = [
   "http://localhost:3000", // desarrollo local
   "https://mi-app-frontend-six.vercel.app", // frontend en vercel
 ];
 
-// Middleware CORS personalizado
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -56,7 +55,7 @@ app.use((req, res, next) => {
 // Servir dashboard estático
 // =======================
 const publicDir = path.join(process.cwd(), "public");
-app.use(express.static(publicDir));
+app.use(express.static(publicDir)); // sirve /css, /js, /images, etc.
 
 // =======================
 // Middleware autenticación JWT
@@ -97,12 +96,8 @@ app.get("/api/status", async (req, res) => {
 // =======================
 // Ruta /dashboard protegida por JWT
 // =======================
-app.get("/dashboard", authMiddleware, async (req, res) => {
-  try {
-    res.sendFile(path.join(publicDir, "index.html"));
-  } catch (err) {
-    res.status(500).send("Error cargando dashboard");
-  }
+app.get("/dashboard", authMiddleware, (req, res) => {
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 // =======================
@@ -131,8 +126,6 @@ const upload = multer({ storage });
 // =======================
 // Rutas Auth
 // =======================
-
-// Registro
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
@@ -153,7 +146,6 @@ app.post("/api/auth/register", async (req, res) => {
   }
 });
 
-// Login
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -183,8 +175,6 @@ app.post("/api/auth/login", async (req, res) => {
 // =======================
 // Rutas Media
 // =======================
-
-// Subir media
 app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) => {
   try {
     const { title, description, hashtags, type } = req.body;
@@ -231,7 +221,6 @@ app.post("/api/media", authMiddleware, upload.single("file"), async (req, res) =
   }
 });
 
-// Listar media trending
 app.get("/api/media/trending", async (req, res) => {
   res.setHeader("Content-Type", "application/json");
   const { orderBy = "views", limit = 10 } = req.query;
@@ -262,7 +251,6 @@ app.get("/api/media/trending", async (req, res) => {
   }
 });
 
-// Obtener media por id
 app.get("/api/media/:id", async (req, res) => {
   try {
     const media = await Media.findById(req.params.id);
@@ -290,22 +278,20 @@ app.get("/api/users/profile", authMiddleware, async (req, res) => {
 });
 
 // =======================
-// Handler 404
+// Handler 404 para APIs
 // =======================
-app.use((req, res) => {
+app.use("/api/*", (req, res) => {
   res.status(404).json({ success: false, error: "Ruta no encontrada" });
 });
 
 // =======================
-// Wildcard para frontend (debe ir al final)
+// Wildcard SOLO para frontend SPA
 // =======================
-app.get("/:splat(*)", (req, res) => {
-  return res.sendFile(path.join(publicDir, "index.html"), (err) => {
-    if (err) {
-      console.error("Error sirviendo dashboard:", err);
-      res.status(500).send("Error cargando dashboard");
-    }
-  });
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api") || req.path.includes(".")) {
+    return next(); // deja pasar assets y APIs
+  }
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 // =======================
