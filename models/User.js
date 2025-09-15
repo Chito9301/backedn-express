@@ -26,11 +26,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select: false, // No incluir password por defecto en consultas
+      select: false, // no incluir password por defecto
     },
-    // Campos para recuperación de contraseña
-    resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   {
     timestamps: true,
@@ -44,7 +43,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Middleware para hashear contraseña antes de guardar
+// Hash de contraseña antes de guardar
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password") || !this.password) return next();
 
@@ -57,15 +56,11 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-// Método para comparar contraseña
+// Comparar contraseñas
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  if (!candidatePassword || !this.password) return false;
-  try {
-    return await bcrypt.compare(candidatePassword, this.password);
-  } catch (err) {
-    return false;
-  }
+  if (!this.password) return false; // más seguro que lanzar error
+  return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Exportar con protección contra OverwriteModelError
+// Export con protección contra OverwriteModelError
 export default mongoose.models.User || mongoose.model("User", userSchema);

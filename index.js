@@ -10,7 +10,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import path from "path";
-
+import authRoutes from './auth.routes.js'; // importar las rutas
 // =======================
 // Modelos
 // =======================
@@ -24,6 +24,11 @@ const app = express();
 // Middleware para parsear JSON y urlencoded
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+// montar rutas de autenticación en /api/auth
+app.use('/api/auth', authRoutes);
+
 
 // =======================
 // Configuración CORS robusta

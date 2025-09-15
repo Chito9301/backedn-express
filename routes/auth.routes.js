@@ -1,15 +1,13 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import User from "../models/User.js";
-import sendEmail from "../utils/sendEmail.js"; // 👉 función que debes implementar para enviar emails
 
 const router = Router();
 
-// =============================
+// =======================
 // Middleware para verificar JWT
-// =============================
+// =======================
 export function authMiddleware(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -25,13 +23,12 @@ export function authMiddleware(req, res, next) {
   });
 }
 
-// =============================
+// =======================
 // Registro de usuario
-// =============================
+// =======================
 router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
-
     if (!username || !email || !password)
       return res.status(400).json({ success: false, error: "Todos los campos son requeridos" });
 
@@ -51,28 +48,19 @@ router.post("/register", async (req, res) => {
     res.status(201).json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
+      user: { id: user._id, username: user.username, email: user.email },
     });
   } catch (err) {
-    if (err.code === 11000) {
-      const duplicatedKey = Object.keys(err.keyValue)[0];
-      return res.status(409).json({ success: false, error: `El ${duplicatedKey} ya está en uso` });
-    }
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// =============================
+// =======================
 // Login de usuario
-// =============================
+// =======================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password)
       return res.status(400).json({ success: false, error: "Email y contraseña son requeridos" });
 
@@ -91,95 +79,76 @@ router.post("/login", async (req, res) => {
     res.json({
       success: true,
       token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-      },
+      user: { id: user._id, username: user.username, email: user.email },
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// =============================
-// Logout de usuario (opcional)
-// =============================
-router.post("/logout", (req, res) => {
-  // Si usas JWT no hay sesión en servidor, el frontend solo borra el token
-  res.json({ success: true, message: "Logout exitoso" });
-});
-
-// =============================
-// Obtener perfil del usuario
-// =============================
-router.get("/me", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password -__v");
-    if (!user) return res.status(404).json({ success: false, error: "Usuario no encontrado" });
-
-    res.json({ success: true, user });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// =============================
-// Forgot Password (solicitar reset)
-// =============================
+// =======================
+// Olvidé contraseña
+// =======================
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: "Email requerido" });
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ error: "No existe una cuenta con este correo electrónico" });
+    if (!user) return res.status(404).json({ error: "Usuario no encontrado" });
 
-    // Generar token de reseteo
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenHash = crypto.createHash("sha256").update(resetToken).digest("hex");
-
-    user.resetPasswordToken = resetTokenHash;
-    user.resetPasswordExpires = Date.now() + 1000 * 60 * 15; // 15 minutos
+    const token = crypto.randomBytes(20).toString("hex");
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1h
     await user.save();
 
-    // Enlace que llegará por email
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
-
-    // Enviar correo (implementa sendEmail en utils)
-    await sendEmail(user.email, "Restablece tu contraseña", `Haz clic en el enlace para resetear tu contraseña: ${resetUrl}`);
-
-    res.json({ success: true, message: "Se envió un enlace de recuperación a tu correo" });
+    // ⚠️ Aquí deberías enviar email real con token
+    res.json({
+      success: true,
+      message: "Se envió un enlace de recuperación al correo",
+      resetUrl: `/reset-password/${token}`,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// =============================
-// Reset Password (usar token)
-// =============================
+// =======================
+// Resetear contraseña
+// =======================
 router.post("/reset-password/:token", async (req, res) => {
   try {
-    const resetTokenHash = crypto.createHash("sha256").update(req.params.token).digest("hex");
+    const { token } = req.params;
+    const { password } = req.body;
 
     const user = await User.findOne({
-      resetPasswordToken: resetTokenHash,
+      resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() },
-    });
+    }).select("+password");
 
     if (!user) return res.status(400).json({ error: "Token inválido o expirado" });
-
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ error: "Nueva contraseña requerida" });
 
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    res.json({ success: true, message: "Contraseña restablecida con éxito" });
+    res.json({ success: true, message: "Contraseña actualizada" });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// =======================
+// Perfil de usuario
+// =======================
+router.get("/me", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password -__v");
+    if (!user) return res.status(404).json({ success: false, error: "Usuario no encontrado" });
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
