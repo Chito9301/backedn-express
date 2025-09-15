@@ -1,5 +1,3 @@
-// index.js
-
 import "dotenv/config";
 import express from "express";
 import mongoose from "mongoose";
@@ -20,9 +18,8 @@ const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser()); // Para manejar cookies
+app.use(cookieParser());
 
-// CORS config
 const allowedOrigins = [
   "http://localhost:3000",
   "https://mi-app-frontend-six.vercel.app",
@@ -44,7 +41,6 @@ app.use('/api/auth', authRoutes);
 const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir));
 
-// Middleware de autenticación JWT que revisa cookie
 function authMiddleware(req, res, next) {
   const token = req.cookies.token;
   if (!token) return res.status(401).json({ error: "Token requerido" });
@@ -56,7 +52,7 @@ function authMiddleware(req, res, next) {
   });
 }
 
-// POST login modificado para enviar token en cookie y redirigir
+// POST login modified para enviar cookie token y redirigir
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -75,28 +71,24 @@ app.post("/api/auth/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // Guardar token JWT en cookie segura httpOnly
+    // Guardar token en cookie httpOnly
     res.cookie("token", token, {
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
-      // secure: true, // habilitar si usas HTTPS
-      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+      // secure: true // habilitar si usas HTTPS
     });
 
-    // Redirigir a dashboard protegido tras login
-    res.json({ success: true, message: "Login correcto. Redirigiendo...", redirectTo: "/dashboard" });
-
+    res.json({ success: true, redirectTo: "/dashboard" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// Ruta protegida /dashboard sirve login.html tal cual tu config
 app.get("/dashboard", authMiddleware, (req, res) => {
   res.sendFile(path.join(publicDir, "login.html"));
 });
 
-// Status API
 app.get("/api/status", async (req, res) => {
   try {
     const mongoStatus = mongoose.connection.readyState === 1 ? "Conectada ✅" : "Desconectada ❌";
@@ -115,19 +107,26 @@ app.get("/api/status", async (req, res) => {
   }
 });
 
-// Resto rutas, mongo connect, multer, cloudinary config sin cambios...
+// Aquí agregarías las otras rutas como media, usuarios, etc.
 
-// Handler 404 APIs
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ Conectado a MongoDB"))
+  .catch(err => console.error("❌ Error MongoDB:", err));
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 app.use("/api/*", (req, res) => {
   res.status(404).json({ success: false, error: "Ruta no encontrada" });
 });
 
-// Wildcard sirve login.html para frontend pública igual que antes
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api") || req.path.includes(".")) return next();
   res.sendFile(path.join(publicDir, "login.html"));
 });
 
-// Iniciar servidor
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`✅ Backend corriendo en puerto ${PORT}`));
