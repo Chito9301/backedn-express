@@ -10,7 +10,8 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import path from "path";
-import authRoutes from './auth.routes.js'; // importar las rutas
+import authRoutes from './routes/auth.routes.js';// importar las rutas
+
 // =======================
 // Modelos
 // =======================
