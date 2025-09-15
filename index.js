@@ -63,6 +63,14 @@ const publicDir = path.join(process.cwd(), "public");
 app.use(express.static(publicDir)); // sirve /css, /js, /images, etc.
 
 // =======================
+// Ruta /dashboard protegida por JWT
+// =======================
+app.get("/dashboard", authMiddleware, (req, res) => {
+  res.sendFile(path.join(publicDir, "login.html"));
+});
+
+
+// =======================
 // Middleware autenticación JWT
 // =======================
 function authMiddleware(req, res, next) {
@@ -96,13 +104,6 @@ app.get("/api/status", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Error cargando dashboard" });
   }
-});
-
-// =======================
-// Ruta /dashboard protegida por JWT
-// =======================
-app.get("/dashboard", authMiddleware, (req, res) => {
-  res.sendFile(path.join(publicDir, "login.html"));
 });
 
 // =======================
