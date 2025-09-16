@@ -10,14 +10,14 @@
   },
   "dependencies": {
     "bcryptjs": "latest",
-    "cloudinary": "latest",
+    "cloudinary": "^1.41.3",
     "cors": "^2.8.5",
     "dotenv": "latest",
     "express": "^4.21.2",
     "jsonwebtoken": "latest",
     "mongoose": "latest",
-    "multer": "latest",
-    "multer-storage-cloudinary": "latest",
+    "multer": "^2.0.2",
+    "multer-storage-cloudinary": "^4.0.0",
     "next": "^15.5.2"
   },
   "devDependencies": {
