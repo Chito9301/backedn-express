@@ -10,8 +10,7 @@ import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import path from "path";
-
-// Importar rutas
+import uploadRoutes from "./routes/upload.routes.js";
 import authRoutes from './routes/auth.routes.js';
 
 // Importar modelos
@@ -50,10 +49,10 @@ app.use(cors({
 }));
 
 // =======================
-// Montar rutas autenticación bajo /api/auth
+// Montar rutas de Multimedia y autenticación bajo /api/auth
 // =======================
 app.use('/api/auth', authRoutes);
-
+app.use("/api/upload", uploadRoutes);
 // =======================
 // Servir archivos estáticos desde carpeta 'public'
 // IMPORTANTE: en Vercel files 'public/' se sirven automáticamente
